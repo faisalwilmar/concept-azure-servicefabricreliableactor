@@ -2,6 +2,9 @@
 <StartupServicesManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.microsoft.com/2011/01/fabric">
   <Parameters>
     <Parameter Name="UserInterestsAPIService_InstanceCount" DefaultValue="-1" />
+    <Parameter Name="UserProfileServiceActorService_PartitionCount" DefaultValue="10" />
+    <Parameter Name="UserProfileServiceActorService_MinReplicaSetSize" DefaultValue="3" />
+    <Parameter Name="UserProfileServiceActorService_TargetReplicaSetSize" DefaultValue="3" />
   </Parameters>
   <Services>
     <!-- The section below creates instances of service types, when an instance of this 
@@ -13,6 +16,11 @@
       <StatelessService ServiceTypeName="UserInterestsAPIServiceType" InstanceCount="[UserInterestsAPIService_InstanceCount]">
         <SingletonPartition />
       </StatelessService>
+    </Service>
+    <Service Name="UserProfileServiceActorService" GeneratedIdRef="0563b79b-7f0f-4df3-a110-feccf5ab423c|Persisted">
+      <StatefulService ServiceTypeName="UserProfileServiceActorServiceType" TargetReplicaSetSize="[UserProfileServiceActorService_TargetReplicaSetSize]" MinReplicaSetSize="[UserProfileServiceActorService_MinReplicaSetSize]">
+        <UniformInt64Partition PartitionCount="[UserProfileServiceActorService_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
+      </StatefulService>
     </Service>
   </Services>
 </StartupServicesManifest>

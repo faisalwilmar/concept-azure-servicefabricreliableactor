@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.ServiceFabric.Actors;
+using Microsoft.ServiceFabric.Actors.Client;
+using UserProfileService.Interfaces;
 
 namespace UserInterestsAPIService.Controllers
 {
@@ -6,11 +9,6 @@ namespace UserInterestsAPIService.Controllers
     [Route("users")]
     public class UserController : ControllerBase
     {
-        private string[] Summaries = new[]
-        {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
-
         private readonly ILogger<UserController> _logger;
 
         public UserController(ILogger<UserController> logger)
@@ -22,14 +20,23 @@ namespace UserInterestsAPIService.Controllers
         [Route("{userId}/interests")]
         public async Task<string[]> GetInterests(string userId)
         {
-            return Summaries;
+            var actorId = new ActorId(userId);
+
+            // Proxy for communicating with Actor Service
+            var proxy = ActorProxy.Create<IUserProfileService>(actorId, new Uri("fabric:/Advertisement/UserProfileServiceActorService"));
+            var interest = await proxy.GetInterests(new CancellationToken());
+            return interest;
         }
 
         [HttpPatch]
         [Route("{userId}/interests")]
-        public async Task AddInterests([FromBody] string[] interestsToAdd)
+        public async Task AddInterests(string userId, [FromBody] string[] interestsToAdd)
         {
-            Summaries = Summaries.Concat(interestsToAdd).ToArray();
+            var actorId = new ActorId(userId);
+
+            // Another way for getting Proxy for communicating with Actor Service
+            var proxy = ActorProxy.Create<IUserProfileService>(actorId, "Advertisement", "UserProfileServiceActorService");
+            await proxy.AddInterests(interestsToAdd, new CancellationToken());
         }
     }
 }

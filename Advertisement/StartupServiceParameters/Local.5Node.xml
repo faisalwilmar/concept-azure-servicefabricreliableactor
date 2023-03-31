@@ -3,5 +3,6 @@
   <Parameters>
     <!--Specific value defined to maintain the number of replicas-->
     <Parameter Name="UserInterestsAPIService_InstanceCount" Value="5" />
+    <Parameter Name="UserProfileServiceActorService_PartitionCount" Value="1" />
   </Parameters>
 </StartupServices>
