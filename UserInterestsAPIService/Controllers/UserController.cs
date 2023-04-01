@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Azure.Cosmos;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
 using UserProfileService.Interfaces;
@@ -10,10 +11,12 @@ namespace UserInterestsAPIService.Controllers
     public class UserController : ControllerBase
     {
         private readonly ILogger<UserController> _logger;
+        private readonly CosmosClient _client;
 
-        public UserController(ILogger<UserController> logger)
+        public UserController(ILogger<UserController> logger, CosmosClient client)
         {
             _logger = logger;
+            _client = client;
         }
 
         [HttpGet]

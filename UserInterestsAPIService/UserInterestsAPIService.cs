@@ -1,3 +1,4 @@
+using Microsoft.Azure.Cosmos.Fluent;
 using Microsoft.ServiceFabric.Services.Communication.AspNetCore;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
@@ -35,7 +36,19 @@ namespace UserInterestsAPIService
                                     .UseContentRoot(Directory.GetCurrentDirectory())
                                     .UseServiceFabricIntegration(listener, ServiceFabricIntegrationOptions.None)
                                     .UseUrls(url);
-                        
+
+                        // Add Database Connection
+                        builder.Services.AddSingleton(s =>
+                        {
+                            var connectionString = Environment.GetEnvironmentVariable("CosmosDB");
+                            if (string.IsNullOrWhiteSpace(connectionString))
+                            {
+                                throw new InvalidOperationException(
+                                    "Please specify a valid CosmosDB connection string in the Environment Variables");
+                            }
+                            return new CosmosClientBuilder(connectionString).Build();
+                        });
+                                    
                         // Add services to the container.
                         
                         builder.Services.AddControllers();
