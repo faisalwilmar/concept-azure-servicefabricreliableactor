@@ -21,6 +21,9 @@
         <Program>UserProfileService.exe</Program>
       </ExeHost>
     </EntryPoint>
+    <EnvironmentVariables>
+      <EnvironmentVariable Name="CosmosDB" Value="" />
+    </EnvironmentVariables>
   </CodePackage>
   <ConfigPackage Name="Config" Version="1.0.0" />
   <Resources>

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace DataAccess.Repository
 {
-    public class CosmosDbNoSqlRepository<T> where T : BaseModel, new()
+    public class CosmosDbNoSqlRepository<T> : ICosmosDbNoSqlRepository<T> where T : BaseModel
     {
         /// <summary>
         /// CosmosDB client connection handler 
@@ -33,6 +33,8 @@ namespace DataAccess.Repository
         private bool _partitionPropertyDefined = false;
         private List<string> _partitionPropertyNames = new();
         private readonly List<PropertyInfo> _partitionProperties = new();
+
+        private bool _disposed = false;
 
         public CosmosDbNoSqlRepository(string databaseId,
             CosmosClient cosmosDBClient, string partitionProperties = "")
@@ -119,6 +121,24 @@ namespace DataAccess.Repository
             return result;
         }
 
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    //_client.Dispose();
+                }
+            }
+            _disposed = true;
+        }
+
         #endregion
 
         public async Task<IEnumerable<T>> GetAsync(
@@ -189,13 +209,29 @@ namespace DataAccess.Repository
             }
         }
 
+        public async Task<T> CreateAsync(T item, string createdBy = null)
+        {
+            var client = _client.Value;
+            var container = client.GetContainer(_databaseId, _collectionId);
+
+            item.CreatedBy = item.LastUpdatedBy = createdBy;
+            item.CreatedDateUtc = item.LastUpdatedDateUtc = DateTime.UtcNow;
+            item.IsDeleted = false;
+            item.PartitionKey = GeneratePartitionKey(item);
+
+            item.Id ??= Guid.NewGuid().ToString();
+
+            var createdItem = await container.CreateItemAsync(item);
+            return createdItem;
+        }
+
         public async Task<T> UpdateAsync(string id, T item, string lastUpdatedBy = null, bool isOptimisticConcurrency = false)
         {
             var client = _client.Value;
             var container = client.GetContainer(this._databaseId, this._collectionId);
             var partitionKey = GeneratePartitionKey(item);
 
-            var oldValue = await GetByIdAsync(id, partitionKey) ?? throw new ArgumentException("Error when update data, old data not found", "id");
+            var oldValue = await GetByIdAsync(id, partitionKey) ?? throw new ArgumentException("Error when update data, old data not found", nameof(id));
 
             item.PartitionKey = oldValue?.PartitionKey;
             item.CreatedBy = oldValue?.CreatedBy;
@@ -211,12 +247,12 @@ namespace DataAccess.Repository
                 {
                     IfMatchEtag = item.Etag
                 };
-                updatedItem = await container.ReplaceItemAsync<T>(item, id, new PartitionKey(partitionKey), requestOptions: requestOptions);
+                updatedItem = await container.ReplaceItemAsync(item, id, new PartitionKey(partitionKey), requestOptions: requestOptions);
 
             }
             else
             {
-                updatedItem = await container.ReplaceItemAsync<T>(item, id, new PartitionKey(partitionKey));
+                updatedItem = await container.ReplaceItemAsync(item, id, new PartitionKey(partitionKey));
             }
 
             return updatedItem;

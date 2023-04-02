@@ -15,6 +15,8 @@ namespace DataAccess.Repository
             bool usePaging = false, string continuationToken = null, int pageSize = 10,
             Dictionary<string, string> partitionKeys = null, bool enableCrossPartition = false);
 
+        public Task<T> CreateAsync(T item, string createdBy = null);
+
         public Task<T> UpdateAsync(string id, T item, string lastUpdatedBy = null, bool isOptimisticConcurrency = false);
     }
 }
